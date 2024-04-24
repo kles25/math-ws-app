@@ -249,3 +249,8 @@ body {
   padding: 1vh .5vw;
   font-size: 1.8vh;
 }
+
+.button-difficulty-holder button.active {
+  background-color: #094067;
+  color: #e1e1e1;
+}

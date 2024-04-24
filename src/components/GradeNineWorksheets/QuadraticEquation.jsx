@@ -4,11 +4,27 @@ import { jsPDF } from "jspdf";
 function QuadraticEquationConverter() {
     const [equations, setEquations] = useState([]);
     const [convertedEquations, setConvertedEquations] = useState([]);
-    const [conversionType, setConversionType] = useState("standardToVertex"); // Default to standard to vertex conversion
+    const [difficulty, setDifficulty] = useState(""); // State for selected difficulty
+    const [conversionType, setConversionType] = useState("standardToVertex");
+    const [activeDifficulty, setActiveDifficulty] = useState("");
 
     // Function to generate random quadratic equations in standard form
-    const generateStandardFormEquations = () => {
-        const randomCoefficient = () => Math.floor(Math.random() * 10) + 1; // Random number between 1 and 10
+    const generateStandardFormEquations = (difficulty) => {
+        let minCoefficient = 1;
+        let maxCoefficient = 10;
+        if (difficulty === "easy") {
+            maxCoefficient = 5;
+        } else if (difficulty === "medium") {
+            minCoefficient = 6;
+            maxCoefficient = 15;
+        } else if (difficulty === "hard") {
+            minCoefficient = 11;
+            maxCoefficient = 20;
+        }
+
+        const randomCoefficient = () =>
+            Math.floor(Math.random() * (maxCoefficient - minCoefficient + 1)) +
+            minCoefficient;
         const newEquations = [];
         const newConvertedEquations = [];
 
@@ -39,8 +55,22 @@ function QuadraticEquationConverter() {
     };
 
     // Function to generate random quadratic equations in vertex form
-    const generateVertexFormEquations = () => {
-        const randomCoefficient = () => Math.floor(Math.random() * 10) + 1; // Random number between 1 and 10
+    const generateVertexFormEquations = (difficulty) => {
+        let minCoefficient = 1;
+        let maxCoefficient = 10;
+        if (difficulty === "easy") {
+            maxCoefficient = 5;
+        } else if (difficulty === "medium") {
+            minCoefficient = 6;
+            maxCoefficient = 15;
+        } else if (difficulty === "hard") {
+            minCoefficient = 11;
+            maxCoefficient = 20;
+        }
+
+        const randomCoefficient = () =>
+            Math.floor(Math.random() * (maxCoefficient - minCoefficient + 1)) +
+            minCoefficient;
         const newEquations = [];
         const newConvertedEquations = [];
 
@@ -75,21 +105,16 @@ function QuadraticEquationConverter() {
         setConversionType(newConversionType);
     };
 
+    const handleDifficultyChange = (difficulty) => {
+        setActiveDifficulty(difficulty);
+    };
+
     const generateEquations = () => {
-        let equationsToPdf = { equations: [], convertedEquations: [] };
-        let conversionTypeString =
-            conversionType === "standardToVertex"
-                ? "Standard to Vertex"
-                : "Vertex to Standard";
         if (conversionType === "standardToVertex") {
-            generateStandardFormEquations();
-            equationsToPdf.equations = [...equations];
+            generateStandardFormEquations(difficulty);
         } else {
-            generateVertexFormEquations();
-            equationsToPdf.convertedEquations = [...equations];
+            generateVertexFormEquations(difficulty);
         }
-        generatePdf(conversionTypeString); // Call generatePdf with the updated conversion type string
-        localStorage.setItem("equations", JSON.stringify(equationsToPdf));
     };
 
     const generatePdf = (conversionType) => {
@@ -99,7 +124,14 @@ function QuadraticEquationConverter() {
                 JSON.parse(storedEquations);
             const doc = new jsPDF();
             const fontSize = 12;
-            const lineHeight = (1.5 * fontSize) / doc.internal.scaleFactor;
+            let title = "";
+
+            // Determine the title based on the conversion type
+            if (conversionType === "standardToVertex") {
+                title = "Standard to Vertex Form";
+            } else if (conversionType === "vertexToStandard") {
+                title = "Vertex to Standard Form";
+            }
 
             // Function to generate content for a single section
             const generateSectionContent = (titles, contents) => {
@@ -112,27 +144,25 @@ function QuadraticEquationConverter() {
 
             // Generate content for questions
             const questionsContent = generateSectionContent(
-                equations.map((equation, index) => `Question ${index + 1}: `),
+                equations.map((equation, index) => `${index + 1}. `),
                 equations
             );
 
             // Generate content for converted equations
             const convertedContent = generateSectionContent(
                 convertedEquations.map(
-                    (convertedEquation, index) => `Answer ${index + 1}: `
+                    (convertedEquation, index) => `${index + 1}. `
                 ),
                 convertedEquations
             );
 
-            // Add title for questions
+            // Add title for the document
             doc.setFontSize(18);
-            doc.text(10, 10, `${conversionType} Equations`);
+            doc.text(10, 10, title + " Equations"); // Corrected line
 
             // Add questions content
             doc.setFontSize(fontSize);
-            doc.text(10, 20, doc.splitTextToSize(questionsContent, 90), {
-                lineHeight,
-            });
+            doc.text(10, 20, doc.splitTextToSize(questionsContent, 90));
 
             // Add a new page for converted equations
             doc.addPage();
@@ -143,16 +173,14 @@ function QuadraticEquationConverter() {
 
             // Add converted equations content
             doc.setFontSize(fontSize);
-            doc.text(10, 20, doc.splitTextToSize(convertedContent, 90), {
-                lineHeight,
-            });
+            doc.text(10, 20, doc.splitTextToSize(convertedContent, 90));
 
             doc.save("equations.pdf");
         }
     };
 
     return (
-        <div>
+        <>
             <h2>
                 {conversionType === "standardToVertex"
                     ? "Standard to Vertex Form Worksheets Generator"
@@ -165,30 +193,47 @@ function QuadraticEquationConverter() {
                 <option value="standardToVertex">Standard to Vertex</option>
                 <option value="vertexToStandard">Vertex to Standard</option>
             </select>
-            <button onClick={generateEquations}>Generate 10 Equations</button>
+            <div className="button-difficulty-holder">
+                <button
+                    className={activeDifficulty === "easy" ? "active" : ""}
+                    onClick={() => handleDifficultyChange("easy")}
+                >
+                    Easy
+                </button>
+                <button
+                    className={activeDifficulty === "medium" ? "active" : ""}
+                    onClick={() => handleDifficultyChange("medium")}
+                >
+                    Medium
+                </button>
+                <button
+                    className={activeDifficulty === "hard" ? "active" : ""}
+                    onClick={() => handleDifficultyChange("hard")}
+                >
+                    Hard
+                </button>
+            </div>
+            <button onClick={generateEquations}>Generate Equations</button>
             {equations.length > 0 && (
                 <div>
+                    <button onClick={() => generatePdf(conversionType)}>
+                        Generate PDF
+                    </button>
                     <h3>Generated Equations:</h3>
                     <ul>
                         {equations.map((equation, index) => (
-                            <li
-                                key={index}
-                                dangerouslySetInnerHTML={{ __html: equation }}
-                            />
+                            <li key={index}>{equation}</li>
                         ))}
                     </ul>
                     <h3>Converted Equations:</h3>
                     <ul>
                         {convertedEquations.map((equation, index) => (
-                            <li
-                                key={index}
-                                dangerouslySetInnerHTML={{ __html: equation }}
-                            />
+                            <li key={index}>{equation}</li>
                         ))}
                     </ul>
                 </div>
             )}
-        </div>
+        </>
     );
 }
 
